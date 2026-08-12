@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard | AI Learning Companion</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f8fafc;
+            color: #111827;
+        }
+
+        /* Navigation */
+
+        .navbar {
+            height: 70px;
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 35px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            font-size: 20px;
+            font-weight: 700;
+            color: #4f46e5;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+
+            border: 3px solid #4f46e5;
+            border-radius: 10px;
+        }
+
+        .user-area {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .welcome {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .logout {
+            text-decoration: none;
+            color: #ef4444;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Main layout */
+
+        .dashboard {
+            display: flex;
+            min-height: calc(100vh - 70px);
+        }
+
+        /* Sidebar */
+
+        .sidebar {
+            width: 230px;
+            background: #ffffff;
+            border-right: 1px solid #e2e8f0;
+
+            padding: 30px 15px;
+        }
+
+        .sidebar-title {
+            font-size: 12px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin: 0 15px 15px;
+        }
+
+        .menu {
+            list-style: none;
+        }
+
+        .menu li {
+            margin-bottom: 6px;
+        }
+
+        .menu a {
+            display: block;
+
+            padding: 12px 15px;
+
+            text-decoration: none;
+            color: #475569;
+
+            border-radius: 8px;
+
+            font-size: 14px;
+        }
+
+        .menu a:hover {
+            background: #f1f5f9;
+            color: #4f46e5;
+        }
+
+        .menu .active {
+            background: #eef2ff;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+
+        /* Content */
+
+        .content {
+            flex: 1;
+            padding: 40px;
+        }
+
+        .heading h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .heading p {
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+
+        /* Statistics */
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 35px;
+        }
+
+        .stat-card {
+            background: #ffffff;
+
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+
+            padding: 25px;
+        }
+
+        .stat-card h3 {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 12px;
+        }
+
+        .stat-number {
+            font-size: 30px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        /* Continue Learning */
+
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .course-card {
+            background: #ffffff;
+
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+
+            padding: 25px;
+
+            margin-bottom: 30px;
+        }
+
+        .course-card h3 {
+            margin-bottom: 8px;
+        }
+
+        .course-card p {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 18px;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+
+            background: #e2e8f0;
+
+            border-radius: 10px;
+
+            overflow: hidden;
+
+            margin-bottom: 12px;
+        }
+
+        .progress {
+            width: 75%;
+            height: 100%;
+            background: #4f46e5;
+        }
+
+        .course-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-text {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .continue {
+            background: #4f46e5;
+            color: white;
+
+            padding: 9px 15px;
+
+            border-radius: 7px;
+
+            text-decoration: none;
+
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Recent Activity */
+
+        .activity {
+            background: #ffffff;
+
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+
+            padding: 25px;
+        }
+
+        .activity-item {
+            padding: 15px 0;
+
+            border-bottom: 1px solid #e2e8f0;
+
+            font-size: 14px;
+            color: #475569;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Mobile */
+
+        @media (max-width: 768px) {
+
+            .sidebar {
+                display: none;
+            }
+
+            .content {
+                padding: 25px 20px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .navbar {
+                padding: 0 20px;
+            }
+
+            .welcome {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navigation -->
+
+    <nav class="navbar">
+
+        <div class="logo">
+            <div class="logo-icon"></div>
+            AI Learning Companion
+        </div>
+
+        <div class="user-area">
+
+            <span class="welcome">
+                Welcome back!
+            </span>
+
+            <a href="/logout" class="logout">
+                Logout
+            </a>
+
+        </div>
+
+    </nav>
+
+
+    <!-- Dashboard -->
+
+    <div class="dashboard">
+
+        <!-- Sidebar -->
+
+        <aside class="sidebar">
+
+            <p class="sidebar-title">
+                Menu
+            </p>
+
+            <ul class="menu">
+
+                <li>
+                    <a href="/dashboard" class="active">
+                        📊 Dashboard
+                    </a>
+                </li>
+
+                <li>
+                    <a href="/courses">
+                        📚 Courses
+                    </a>
+                </li>
+
+                <li>
+                    <a href="/quizzes">
+                        📝 Quizzes
+                    </a>
+                </li>
+
+                <li>
+                    <a href="/progress">
+                        📈 Progress
+                    </a>
+                </li>
+
+                <li>
+                    <a href="/profile">
+                        👤 Profile
+                    </a>
+                </li>
+
+                <li>
+                    <a href="/settings">
+                        ⚙️ Settings
+                    </a>
+                </li>
+
+            </ul>
+
+        </aside>
+
+
+        <!-- Main Content -->
+
+        <main class="content">
+
+            <div class="heading">
+
+                <h1>
+                    Welcome back, Isreal! 👋
+                </h1>
+
+                <p>
+                    Continue your learning journey.
+                </p>
+
+            </div>
+
+
+            <!-- Statistics -->
+
+            <div class="stats">
+
+                <div class="stat-card">
+
+                    <h3>
+                        Courses
+                    </h3>
+
+                    <div class="stat-number">
+                        5
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <h3>
+                        Quizzes Completed
+                    </h3>
+
+                    <div class="stat-number">
+                        12
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <h3>
+                        Learning Points
+                    </h3>
+
+                    <div class="stat-number">
+                        850
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Continue Learning -->
+
+            <h2 class="section-title">
+                Continue Learning
+            </h2>
+
+            <div class="course-card">
+
+                <h3>
+                    Go Programming
+                </h3>
+
+                <p>
+                    Continue learning Go programming fundamentals.
+                </p>
+
+                <div class="progress-container">
+
+                    <div class="progress"></div>
+
+                </div>
+
+                <div class="course-bottom">
+
+                    <span class="progress-text">
+                        75% completed
+                    </span>
+
+                    <a href="#" class="continue">
+                        Continue
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <!-- Recent Activity -->
+
+            <h2 class="section-title">
+                Recent Activity
+            </h2>
+
+            <div class="activity">
+
+                <div class="activity-item">
+                    Completed Python Variables lesson
+                </div>
+
+                <div class="activity-item">
+                    Passed Go Functions quiz
+                </div>
+
+                <div class="activity-item">
+                    Started Web Development course
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+</body>
+</html>
