@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning Materials</title>
+    <!-- Tailwind CSS CDN for modern styling -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-xs">
+        <h1 class="text-xl font-bold text-indigo-600">📚 StudyPortal</h1>
+        <div class="space-x-4">
+            <a href="/dashboard" class="text-slate-600 hover:text-indigo-600 font-medium">Dashboard</a>
+            <a href="/logout" class="text-red-600 hover:text-red-700 font-medium">Logout</a>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="max-w-5xl mx-auto px-6 py-8">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-2xl font-bold tracking-tight">Your Learning Materials</h2>
+                <p class="text-slate-500 text-sm mt-1">Add and manage your study resources and notes.</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+            <!-- Form Card to Add New Material -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-xs h-fit">
+                <h3 class="text-lg font-semibold mb-4 text-slate-700">Add New Material</h3>
+                <form action="/learning" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Subject</label>
+                        <input type="text" name="subject" required placeholder="e.g., Mathematics"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Topic</label>
+                        <input type="text" name="topic" required placeholder="e.g., Quadratic Equations"
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Content / Notes</label>
+                        <textarea name="content" rows="4" required placeholder="Write your notes here..."
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-sm"></textarea>
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm shadow-xs cursor-pointer">
+                        Save Material
+                    </button>
+                </form>
+            </div>
+
+            <!-- List of Saved Materials -->
+            <div class="md:col-span-2 space-y-4">
+                <h3 class="text-lg font-semibold text-slate-700">Saved Resources</h3>
+
+                {{if .Materials}}
+                <div class="space-y-4">
+                    {{range .Materials}}
+                    <div
+                        class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs hover:border-indigo-300 transition-all flex flex-col justify-between">
+                        <div>
+                            <!-- Top Row: Subject Tag and Timestamp + Actions -->
+                            <div class="flex justify-between items-start gap-4">
+                                <span class="bg-indigo-50 text-indigo-700 text-xs font-semibold px-2.5 py-1 rounded-md">
+                                    {{.Subject}}
+                                </span>
+
+                                <div class="flex items-center gap-3">
+                                    <span class="text-slate-400 text-xs">{{.CreatedAt}}</span>
+
+                                    <!-- Edit Link / Button -->
+                                    <a href="/edit?id={{.ID}}"
+                                        class="text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 px-2.5 py-1 rounded-md text-xs font-medium transition-colors">
+                                        Edit
+                                    </a>
+
+                                    <!-- Styled Delete Form -->
+                                    <form action="/delete" method="POST" class="inline">
+                                        <input type="hidden" name="delete" value="{{.ID}}">
+                                        <button type="submit"
+                                            class="text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Topic Heading -->
+                            <h4 class="font-bold text-slate-800 text-lg mt-3">{{.Topic}}</h4>
+
+                            <!-- Content/Notes -->
+                            <p class="text-slate-600 text-sm mt-2 whitespace-pre-line">{{.Content}}</p>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+                {{else}}
+                <div class="bg-white p-8 rounded-xl border border-dashed border-slate-300 text-center">
+                    <p class="text-slate-500 text-sm">No learning materials added yet. Use the form on the left to add
+                        your first one!</p>
+                </div>
+                {{end}}
+            </div>
+
+        </div>
+    </main>
+
+</body>
+
+</html>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -309,8 +310,14 @@
         <div class="user-area">
 
             <span class="welcome">
-                Welcome back!
+                Welcome back! {{.FirstName}} {{.LastName}}!
             </span>
+
+
+            <a href="/learning"
+                style="font-size: 13px; font-weight: 600; color: #4f46e5; text-decoration: none; margin-top: auto;">
+                View all materials &rarr;
+            </a>
 
             <a href="/logout" class="logout">
                 Logout
@@ -383,7 +390,7 @@
             <div class="heading">
 
                 <h1>
-                    Welcome back, Isreal! 👋
+                    Welcome back, {{.FirstName}} {{.LastName}}!
                 </h1>
 
                 <p>
@@ -400,11 +407,11 @@
                 <div class="stat-card">
 
                     <h3>
-                        Courses
+                        Learning Material
                     </h3>
 
                     <div class="stat-number">
-                        5
+                        {{.MaterialCount}}
                     </div>
 
                 </div>
@@ -502,4 +509,5 @@
     </div>
 
 </body>
+
 </html>

@@ -9,6 +9,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
@@ -24,6 +26,16 @@ type Session struct {
 }
 
 var Sessions = []Session{}
+
+type LearningMaterial struct {
+	ID        int
+	Subject   string
+	Topic     string
+	Content   string
+	CreatedAt string
+}
+
+var materials []LearningMaterial
 
 func generateSessionID() string {
 	sessionID := make([]byte, 32)
@@ -140,10 +152,10 @@ func LogHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	Sessions = append(Sessions, newSession)
 
-	http.SetCookie(w, &http.Cookie{
-		Name:  "session_id",
-		Value: SessionID,
-	})
+	// http.SetCookie(w, &http.Cookie{
+	// 	Name:  "session_id",
+	// 	Value: SessionID,
+	// })
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",
@@ -153,10 +165,263 @@ func LogHandler(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 	})
 
+	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+	return
 }
+
+func DashboardHandler(w http.ResponseWriter, r *http.Request) {
+
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			http.Error(w, "Unauthorized: No login cookie found", http.StatusUnauthorized)
+			return
+		}
+
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	sessionToken := cookie.Value
+
+	var isAuthenticated bool
+	var userID int
+
+	for i := 0; i < len(Sessions); i++ {
+		if Sessions[i].SessionID == sessionToken {
+			isAuthenticated = true
+			userID = Sessions[i].UsersID
+			break
+		}
+	}
+
+	if !isAuthenticated {
+		http.Error(w, "Unauthorized: Invalid session", http.StatusUnauthorized)
+		return
+	}
+
+	var materialCount int
+
+	query := "SELECT COUNT(*) FROM learning_materials WHERE user_id = ?"
+
+	err = db.QueryRow(query, userID).Scan(&materialCount)
+	if err != nil {
+		http.Error(w, "Error counting learning materials", http.StatusInternalServerError)
+		return
+	}
+
+	var FirstName, LastName string
+
+	query = "SELECT first_name, last_name FROM users WHERE id = ?"
+	err = db.QueryRow(query, userID).Scan(&FirstName, &LastName)
+	if err != nil {
+		http.Error(w, "Error retrieving profile", http.StatusInternalServerError)
+		return
+	}
+
+	data := struct {
+		FirstName     string
+		LastName      string
+		MaterialCount int
+	}{
+		FirstName:     FirstName,
+		LastName:      LastName,
+		MaterialCount: materialCount,
+	}
+
+	templ, err := template.ParseFiles("template/dashboard.html")
+	if err != nil {
+		http.Error(w, "Could not load dashboard", http.StatusInternalServerError)
+		return
+	}
+	templ.Execute(w, data)
+}
+
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Error(w, "Could Not Be Fund", http.StatusInternalServerError)
+		return
+	}
+
+	sessionToken := cookie.Value
+
+	for i := 0; i < len(Sessions); i++ {
+		if Sessions[i].SessionID == sessionToken {
+			Sessions = append(Sessions[:i], Sessions[i+1:]...)
+			break
+		}
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		HttpOnly: true,
+		Secure:   false,
+		Path:     "/",
+	})
+
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+
+}
+
+func learning_materials(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			http.Error(w, "Unauthorized: No login cookie found", http.StatusUnauthorized)
+			return
+		}
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+	sessionToken := cookie.Value
+
+	var isAuthenticated bool
+	var userID int
+
+	for i := 0; i < len(Sessions); i++ {
+		if Sessions[i].SessionID == sessionToken {
+			isAuthenticated = true
+			userID = Sessions[i].UsersID
+			break
+		}
+	}
+	if !isAuthenticated {
+		http.Error(w, "Unauthorized: Invalid session", http.StatusUnauthorized)
+		return
+	}
+
+	// Handle POST: Insert new material when form is submitted
+	if r.Method == http.MethodPost {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Unable to parse form", http.StatusBadRequest)
+			return
+		}
+
+		subject := r.FormValue("subject")
+		topic := r.FormValue("topic")
+		content := r.FormValue("content")
+
+		if subject == "" || topic == "" || content == "" {
+			http.Error(w, "All fields are required", http.StatusBadRequest)
+			return
+		}
+
+		insertQuery := "INSERT INTO learning_materials (user_id, subject, topic, content) VALUES (?, ?, ?, ?)"
+		_, err = db.Exec(insertQuery, userID, subject, topic, content)
+		if err != nil {
+			log.Printf("Insert error: %v", err)
+			http.Error(w, "Failed to save material", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/learning", http.StatusSeeOther)
+		return
+	}
+
+	// Handle GET: Fetch and display materials
+	query := "SELECT id, subject, topic, content, created_at FROM learning_materials WHERE user_id = ?"
+	rows, err := db.Query(query, userID)
+	if err != nil {
+		http.Error(w, "Error retrieving learning materials", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var userMaterials []LearningMaterial
+	for rows.Next() {
+		var material LearningMaterial
+		err := rows.Scan(&material.ID, &material.Subject, &material.Topic, &material.Content, &material.CreatedAt)
+		if err != nil {
+			continue
+		}
+		userMaterials = append(userMaterials, material)
+	}
+
+	data := struct {
+		Materials []LearningMaterial
+	}{
+		Materials: userMaterials,
+	}
+
+	templ, err := template.ParseFiles("template/learning_materials.html")
+	if err != nil {
+		log.Printf("Template error: %v", err)
+		http.Error(w, "Could not load materials page", http.StatusInternalServerError)
+		return
+	}
+	templ.Execute(w, data)
+}
+
+func DeleteHandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	id := r.FormValue("delete")
+	ConvertIdToInt, err := strconv.Atoi(id)
+	if err != nil {
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			http.Error(w, "Unauthorized: No login cookie found", http.StatusInternalServerError)
+			return
+		}
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	sessionToken := cookie.Value
+
+	var isAuthenticated bool
+	var userID int
+
+	for i := 0; i < len(Sessions); i++ {
+		if Sessions[i].SessionID == sessionToken {
+			isAuthenticated = true
+			userID = Sessions[i].UsersID
+			break
+		}
+	}
+	if !isAuthenticated {
+		http.Error(w, "Unauthorized: Invalid session", http.StatusUnauthorized)
+		return
+	}
+
+	query := "DELETE FROM learning_materials WHERE id = ? AND user_id = ?"
+	_, err = db.Exec(query, ConvertIdToInt, userID)
+	if err != nil {
+		log.Printf("Delete error: %v", err)
+		http.Error(w, "Failed to delete material", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/learning", http.StatusSeeOther)
+
+}
+
 
 func main() {
 
+	http.HandleFunc("/delete", DeleteHandler)
+	http.HandleFunc("/learning", learning_materials)
+
+	http.HandleFunc("/logout", LogoutHandler)
+	http.HandleFunc("/dashboard", DashboardHandler)
 	http.HandleFunc("/login", LogHandler)
 	http.HandleFunc("/register", RegisterHandler)
 
