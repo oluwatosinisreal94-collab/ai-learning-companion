@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Practice | AI Learning Companion</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f7fb;
+            color: #172033;
+            min-height: 100vh;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: #111827;
+            color: white;
+            padding: 18px 7%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .logo span {
+            color: #60a5fa;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            padding: 9px 16px;
+            border-radius: 8px;
+            background: #1f2937;
+            transition: 0.2s;
+        }
+
+        .back-link:hover {
+            background: #374151;
+        }
+
+        /* MAIN */
+        .container {
+            width: 90%;
+            max-width: 900px;
+            margin: 40px auto;
+        }
+
+        /* HEADER */
+        .practice-header {
+            background: white;
+            border-radius: 18px;
+            padding: 35px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+        }
+
+        .practice-header small {
+            color: #2563eb;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .practice-header h1 {
+            margin-top: 10px;
+            font-size: 34px;
+        }
+
+        .practice-header p {
+            margin-top: 10px;
+            color: #6b7280;
+            font-size: 16px;
+        }
+
+        /* QUESTION CARD */
+        .question-card {
+            background: white;
+            border-radius: 18px;
+            padding: 30px;
+            margin-bottom: 22px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+        }
+
+        .question-number {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 7px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .question-text {
+            font-size: 20px;
+            font-weight: bold;
+            line-height: 1.5;
+            margin-bottom: 22px;
+        }
+
+        /* OPTIONS */
+        .options {
+            display: grid;
+            gap: 12px;
+        }
+
+        .option {
+            position: relative;
+        }
+
+        .option input {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .option label {
+            display: block;
+            border: 2px solid #e5e7eb;
+            padding: 16px 18px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.2s;
+            background: #fafafa;
+        }
+
+        .option label:hover {
+            border-color: #60a5fa;
+            background: #eff6ff;
+        }
+
+        .option input:checked + label {
+            border-color: #2563eb;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-weight: bold;
+        }
+
+        .letter {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .option input:checked + label .letter {
+            background: #2563eb;
+            color: white;
+        }
+
+        /* SUBMIT */
+        .submit-section {
+            text-align: center;
+            margin: 35px 0 60px;
+        }
+
+        .submit-btn {
+            border: none;
+            background: #2563eb;
+            color: white;
+            padding: 15px 35px;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .submit-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+        /* EMPTY STATE */
+        .empty {
+            background: white;
+            padding: 60px 30px;
+            text-align: center;
+            border-radius: 18px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+        }
+
+        .empty-icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+        }
+
+        .empty h2 {
+            margin-bottom: 10px;
+        }
+
+        .empty p {
+            color: #6b7280;
+        }
+
+        /* MOBILE */
+        @media (max-width: 600px) {
+
+            .navbar {
+                padding: 15px 5%;
+            }
+
+            .logo {
+                font-size: 18px;
+            }
+
+            .back-link {
+                padding: 7px 11px;
+                font-size: 14px;
+            }
+
+            .container {
+                width: 94%;
+                margin: 25px auto;
+            }
+
+            .practice-header {
+                padding: 25px 20px;
+            }
+
+            .practice-header h1 {
+                font-size: 27px;
+            }
+
+            .question-card {
+                padding: 22px 18px;
+            }
+
+            .question-text {
+                font-size: 18px;
+            }
+
+            .option label {
+                padding: 14px;
+                font-size: 15px;
+            }
+
+            .submit-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="logo">
+            AI <span>Learning Companion</span>
+        </div>
+
+        <a href="/dashboard" class="back-link">
+            ← Dashboard
+        </a>
+    </nav>
+
+
+    <main class="container">
+
+        <!-- HEADER -->
+        <section class="practice-header">
+            <small>Practice Session</small>
+
+            <h1>Test Your Knowledge 🧠</h1>
+
+            <p>
+                Answer the questions below and see how much you have learned.
+            </p>
+        </section>
+
+
+        {{if .}}
+
+        <form method="POST" action="/practice">
+
+            {{range $index, $question := .}}
+
+            <!-- QUESTION -->
+            <div class="question-card">
+
+                <div class="question-number">
+                    Question {{add $index 1}}
+                </div>
+
+                <div class="question-text">
+                    {{$question.Question}}
+                </div>
+
+
+                <div class="options">
+
+                    <!-- OPTION A -->
+                    <div class="option">
+                        <input
+                            type="radio"
+                            id="q{{$question.ID}}a"
+                            name="question_{{$question.ID}}"
+                            value="{{$question.OptionA}}"
+                        >
+
+                        <label for="q{{$question.ID}}a">
+                            <span class="letter">A</span>
+                            {{$question.OptionA}}
+                        </label>
+                    </div>
+
+
+                    <!-- OPTION B -->
+                    <div class="option">
+                        <input
+                            type="radio"
+                            id="q{{$question.ID}}b"
+                            name="question_{{$question.ID}}"
+                            value="{{$question.OptionB}}"
+                        >
+
+                        <label for="q{{$question.ID}}b">
+                            <span class="letter">B</span>
+                            {{$question.OptionB}}
+                        </label>
+                    </div>
+
+
+                    <!-- OPTION C -->
+                    <div class="option">
+                        <input
+                            type="radio"
+                            id="q{{$question.ID}}c"
+                            name="question_{{$question.ID}}"
+                            value="{{$question.OptionC}}"
+                        >
+
+                        <label for="q{{$question.ID}}c">
+                            <span class="letter">C</span>
+                            {{$question.OptionC}}
+                        </label>
+                    </div>
+
+
+                    <!-- OPTION D -->
+                    <div class="option">
+                        <input
+                            type="radio"
+                            id="q{{$question.ID}}d"
+                            name="question_{{$question.ID}}"
+                            value="{{$question.OptionD}}"
+                        >
+
+                        <label for="q{{$question.ID}}d">
+                            <span class="letter">D</span>
+                            {{$question.OptionD}}
+                        </label>
+                    </div>
+
+                </div>
+
+            </div>
+
+            {{end}}
+
+
+            <!-- SUBMIT -->
+            <div class="submit-section">
+                <button type="submit" class="submit-btn">
+                    Submit Practice 🚀
+                </button>
+            </div>
+
+        </form>
+
+        {{else}}
+
+        <!-- NO QUESTIONS -->
+        <div class="empty">
+
+            <div class="empty-icon">
+                📚
+            </div>
+
+            <h2>No Practice Questions Yet</h2>
+
+            <p>
+                Practice questions have not been added for this learning material.
+            </p>
+
+        </div>
+
+        {{end}}
+
+    </main>
+
+</body>
+</html>

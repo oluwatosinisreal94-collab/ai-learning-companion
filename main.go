@@ -12,9 +12,14 @@ import (
 	"strconv"
 	"time"
 
+	"context"
+	"encoding/json"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/genai"
+	// "golang.org/x/vuln/scan"
 )
 
 // Declare db globally so RegisterHandler can access it
@@ -33,6 +38,17 @@ type LearningMaterial struct {
 	Topic     string
 	Content   string
 	CreatedAt string
+}
+
+type PracticeQuestion struct {
+	ID            int
+	MaterialID    int
+	Question      string `json:"question"`
+	OptionA       string `json:"option_a"`
+	OptionB       string `json:"option_b"`
+	OptionC       string `json:"option_c"`
+	OptionD       string `json:"option_d"`
+	CorrectAnswer string `json:"correct_answer"`
 }
 
 var materials []LearningMaterial
@@ -414,9 +430,450 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func EditingHandler(w http.ResponseWriter, r *http.Request) {
+
+	// =========================
+	// GET: Show the edit page
+	// =========================
+	if r.Method == http.MethodGet {
+
+		id := r.URL.Query().Get("id")
+
+		converToInt, err := strconv.Atoi(id)
+		if err != nil {
+			http.Error(w, "Invalid ID format", http.StatusBadRequest)
+			return
+		}
+
+		cookie, err := r.Cookie("session_id")
+		if err != nil {
+			if err == http.ErrNoCookie {
+				http.Error(w, "Unauthorized: No login cookie found", http.StatusUnauthorized)
+				return
+			}
+
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		sessionToken := cookie.Value
+
+		var isAuthenticated bool
+		var userID int
+
+		for i := 0; i < len(Sessions); i++ {
+			if Sessions[i].SessionID == sessionToken {
+				isAuthenticated = true
+				userID = Sessions[i].UsersID
+				break
+			}
+		}
+
+		if !isAuthenticated {
+			http.Error(w, "Unauthorized: Invalid session", http.StatusUnauthorized)
+			return
+		}
+
+		query := "SELECT id, subject, topic, content, created_at FROM learning_materials WHERE id = ? AND user_id = ?"
+
+		var material LearningMaterial
+
+		err = db.QueryRow(query, converToInt, userID).Scan(
+			&material.ID,
+			&material.Subject,
+			&material.Topic,
+			&material.Content,
+			&material.CreatedAt,
+		)
+
+		if err != nil {
+			log.Printf("Editing error: %v", err)
+			http.Error(w, "Failed to edit material", http.StatusInternalServerError)
+			return
+		}
+
+		templ, err := template.ParseFiles("template/edit_material.html")
+		if err != nil {
+			http.Error(w, "Could not load edit page", http.StatusInternalServerError)
+			return
+		}
+
+		templ.Execute(w, material)
+		return
+	}
+
+	// =========================
+	// POST: Update the material
+	// =========================
+	if r.Method == http.MethodPost {
+
+		ID := r.FormValue("id")
+		Subject := r.FormValue("subject")
+		Topic := r.FormValue("topic")
+		Content := r.FormValue("content")
+
+		if Subject == "" {
+			http.Error(w, "Error: Subject is required.", http.StatusBadRequest)
+			return
+		} else if Topic == "" {
+			http.Error(w, "Error: Topic is required.", http.StatusBadRequest)
+			return
+		} else if Content == "" {
+			http.Error(w, "Error: Content is required.", http.StatusBadRequest)
+			return
+		}
+
+		converToInt, err := strconv.Atoi(ID)
+		if err != nil {
+			http.Error(w, "Invalid ID format", http.StatusBadRequest)
+			return
+		}
+
+		cookie, err := r.Cookie("session_id")
+		if err != nil {
+			if err == http.ErrNoCookie {
+				http.Error(w, "Unauthorized: No login cookie found", http.StatusUnauthorized)
+				return
+			}
+
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		sessionToken := cookie.Value
+
+		var isAuthenticated bool
+		var userID int
+
+		for i := 0; i < len(Sessions); i++ {
+			if Sessions[i].SessionID == sessionToken {
+				isAuthenticated = true
+				userID = Sessions[i].UsersID
+				break
+			}
+		}
+
+		if !isAuthenticated {
+			http.Error(w, "Unauthorized: Invalid session", http.StatusUnauthorized)
+			return
+		}
+
+		query := "UPDATE learning_materials SET subject = ?, topic = ?, content = ? WHERE id = ? AND user_id = ?"
+
+		_, err = db.Exec(query, Subject, Topic, Content, converToInt, userID)
+
+		if err != nil {
+			log.Printf("Editing error: %v", err)
+			http.Error(w, "Failed to update material", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/learning", http.StatusSeeOther)
+		return
+	}
+
+	// =========================
+	// Any other method
+	// =========================
+	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+}
+
+func StudyHandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+
+	convertoint, err := strconv.Atoi(id)
+
+	if err != nil {
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+
+	cookies, err := r.Cookie("session_id")
+
+	if err != nil {
+		if err == http.ErrNoCookie {
+			http.Error(w, "Unauthorized: No Login Cookie Found", http.StatusUnauthorized)
+			return
+		}
+
+		http.Error(w, "BadRequest", http.StatusBadRequest)
+		return
+	}
+
+	SessionToken := cookies.Value
+
+	var isAuthenticated bool
+	var UseID int
+
+	for i := 0; i < len(Sessions); i++ {
+
+		if Sessions[i].SessionID == SessionToken {
+			isAuthenticated = true
+			UseID = Sessions[i].UsersID
+		}
+	}
+
+	if !isAuthenticated {
+		http.Error(w, "Unauthorized: Invalid session", http.StatusUnauthorized)
+		return
+	}
+
+	var material LearningMaterial
+
+	query := "SELECT id, subject, topic, content, created_at FROM learning_materials WHERE id=? AND user_id=?"
+
+	err = db.QueryRow(query, convertoint, UseID).Scan(
+		&material.ID,
+		&material.Subject,
+		&material.Topic,
+		&material.Content,
+		&material.CreatedAt,
+	)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Get practice questions
+	var questions []PracticeQuestion
+
+	questionQuery := `
+		SELECT id, material_id, question, option_a, option_b, option_c, option_d, correct_answer
+		FROM practice_questions
+		WHERE material_id = ?
+	`
+
+	rows, err := db.Query(questionQuery, convertoint)
+
+	if err != nil {
+		http.Error(w, "Could not load practice questions", http.StatusInternalServerError)
+		return
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+
+		var question PracticeQuestion
+
+		err := rows.Scan(
+			&question.ID,
+			&question.MaterialID,
+			&question.Question,
+			&question.OptionA,
+			&question.OptionB,
+			&question.OptionC,
+			&question.OptionD,
+			&question.CorrectAnswer,
+		)
+
+		if err != nil {
+			http.Error(w, "Could not read practice question", http.StatusInternalServerError)
+			return
+		}
+
+		questions = append(questions, question)
+	}
+
+	if err = rows.Err(); err != nil {
+		http.Error(w, "Error reading questions", http.StatusInternalServerError)
+		return
+	}
+
+	templ, err := template.ParseFiles("template/study.html")
+
+	if err != nil {
+		http.Error(w, "Could Not Load The Study Page", http.StatusInternalServerError)
+		return
+	}
+
+	data := struct {
+		Material  LearningMaterial
+		Questions []PracticeQuestion
+	}{
+		Material:  material,
+		Questions: questions,
+	}
+
+	templ.Execute(w, data)
+}
+
+func add(a int, b int) int {
+	return a + b
+}
+
+func PracticeHandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+	converToint, err := strconv.Atoi(id)
+	if err != nil {
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			http.Error(w, "Unauthorized: No login cookie found", http.StatusUnauthorized)
+			return
+		}
+		http.Error(w, "BadRequest", http.StatusBadRequest)
+		return
+	}
+	SessionToken := cookie.Value
+
+	var isAuthenticated bool
+	// var UseID int
+
+	for i := 0; i < len(Sessions); i++ {
+		if Sessions[i].SessionID == SessionToken {
+			isAuthenticated = true
+			// UseID = Sessions[i].UsersID
+			break
+		}
+	}
+
+	if !isAuthenticated {
+		http.Error(w, "Unauthorized: Invalid session", http.StatusUnauthorized)
+		return
+	}
+
+	var questions []PracticeQuestion
+
+	query := "SELECT id , material_id, question,option_a ,option_b , option_c ,  option_d , correct_answer FROM practice_questions WHERE material_id = ?"
+
+	// err = db.QueryRow(query , converToint,UseID)
+	rows, err := db.Query(query, converToint)
+
+	if err != nil {
+		http.Error(w, "Error retrieving learning materials", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var question PracticeQuestion
+		err := rows.Scan(&question.ID, &question.MaterialID, &question.Question, &question.OptionA, &question.OptionB, &question.OptionC, &question.OptionD, &question.CorrectAnswer)
+		if err != nil {
+			continue
+		}
+		questions = append(questions, question)
+
+	}
+	if err := rows.Err(); err != nil {
+		http.Error(w, "Error reading practice questions", http.StatusInternalServerError)
+		return
+	}
+
+	// templ, err := template.ParseFiles("template/practice.html")
+	templ, err := template.New("practice.html").
+		Funcs(template.FuncMap{
+			"add": add,
+		}).
+		ParseFiles("template/practice.html")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = templ.Execute(w, questions)
+	if err != nil {
+		http.Error(w, "Could not load practice page", http.StatusInternalServerError)
+		return
+	}
+
+}
 
 func main() {
 
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env")
+	}
+
+	Api_Key := os.Getenv("GEMINI_API_KEY")
+	ctx := context.Background()
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey: Api_Key,
+	})
+
+	schema := &genai.Schema{
+		Type: genai.TypeObject,
+		Properties: map[string]*genai.Schema{
+			"question": {
+				Type: genai.TypeString,
+			},
+			"option_a": {
+				Type: genai.TypeString,
+			},
+			"option_b": {
+				Type: genai.TypeString,
+			},
+			"option_c": {
+				Type: genai.TypeString,
+			},
+			"option_d": {
+				Type: genai.TypeString,
+			},
+			"correct_answer": {
+				Type: genai.TypeString,
+				Enum: []string{"A", "B", "C", "D"},
+			},
+		},
+
+		Required: []string{
+			"question",
+			"option_a",
+			"option_b",
+			"option_c",
+			"option_d",
+			"correct_answer",
+		},
+	}
+
+	response, err := client.Models.GenerateContent(
+		ctx,
+		"gemini-3.6-flash",
+		[]*genai.Content{
+			genai.NewContentFromText("Generate one multiple-choice question about Go structs. Provide four options and identify the correct answer.", genai.RoleUser),
+		}, &genai.GenerateContentConfig{ResponseMIMEType: "application/json", ResponseSchema: schema},
+	)
+
+	if err != nil {
+		log.Fatal("Gemini error:", err)
+	}
+
+	jsonData := response.Text()
+	var generatedQuestion PracticeQuestion
+
+	err = json.Unmarshal([]byte(jsonData), &generatedQuestion)
+	if err != nil {
+		log.Fatalf("Failed to unmarshal Gemini response: %v", err)
+	}
+
+	fmt.Println("Generated question:", generatedQuestion.Question)
+	fmt.Println("Option A:", generatedQuestion.OptionA)
+	fmt.Println("Option B:", generatedQuestion.OptionB)
+	fmt.Println("Option C:", generatedQuestion.OptionC)
+	fmt.Println("Option D:", generatedQuestion.OptionD)
+	fmt.Println("Correct answer:", generatedQuestion.CorrectAnswer)
+	// println(response.Text())
+
+	http.HandleFunc("/practice", PracticeHandler)
+	http.HandleFunc("/study", StudyHandler)
+	http.HandleFunc("/edit", EditingHandler)
 	http.HandleFunc("/delete", DeleteHandler)
 	http.HandleFunc("/learning", learning_materials)
 
@@ -424,11 +881,6 @@ func main() {
 	http.HandleFunc("/dashboard", DashboardHandler)
 	http.HandleFunc("/login", LogHandler)
 	http.HandleFunc("/register", RegisterHandler)
-
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env")
-	}
 
 	dbUser := os.Getenv("DB_USER")
 	dbPassword := os.Getenv("DB_PASSWORD")

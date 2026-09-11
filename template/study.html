@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>{{.Material.Topic}} - Study</title>
+
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+</head>
+
+<body class="bg-gradient-to-br from-emerald-50/50 via-gray-50 to-teal-50/30 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+
+<!-- Top Navigation Bar -->
+<header class="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+
+        <div class="flex items-center space-x-3">
+
+            <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-sm shadow-emerald-200">
+
+                <i class="fa-solid fa-graduation-cap"></i>
+
+            </div>
+
+            <span class="text-xl font-extrabold text-gray-900 tracking-tight">
+                AI Learning Companion
+            </span>
+
+        </div>
+
+        <nav class="flex items-center space-x-6 text-sm font-medium">
+
+            <a href="/dashboard"
+                class="text-gray-600 hover:text-emerald-600 transition">
+                Dashboard
+            </a>
+
+            <a href="/learning"
+                class="text-gray-600 hover:text-emerald-600 transition">
+                Materials
+            </a>
+
+        </nav>
+
+    </div>
+
+</header>
+
+
+<!-- Main Container -->
+
+<main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow w-full">
+
+    <!-- Back Link -->
+
+    <a href="/learning"
+        class="inline-flex items-center text-sm font-semibold text-emerald-600 hover:text-emerald-800 transition mb-6 group">
+
+        <i class="fa-solid fa-arrow-left mr-2 group-hover:-translate-x-1 transition-transform"></i>
+
+        Back to Materials
+
+    </a>
+
+
+    <!-- Study Card -->
+
+    <article class="bg-white rounded-2xl shadow-xl shadow-gray-100 border border-gray-100 p-6 sm:p-10">
+
+
+        <!-- Subject Badge -->
+
+        <span class="inline-block bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4 border border-emerald-100">
+
+            {{.Material.Subject}}
+
+        </span>
+
+
+        <!-- Topic Title -->
+
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-2">
+
+            {{.Material.Topic}}
+
+        </h1>
+
+
+        <!-- Created Date -->
+
+        <div class="text-sm text-gray-400 mb-8 pb-6 border-b border-gray-100 flex items-center">
+
+            <i class="fa-regular fa-calendar mr-2 text-emerald-500"></i>
+
+            Created: {{.Material.CreatedAt}}
+
+        </div>
+
+
+        <!-- Content -->
+
+        <div class="text-gray-700 text-base sm:text-lg leading-relaxed whitespace-pre-wrap space-y-4">
+
+            {{.Material.Content}}
+
+        </div>
+
+
+        <!-- Practice Questions -->
+
+        <div class="mt-10">
+
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                Practice Questions
+            </h2>
+
+
+            {{range .Questions}}
+
+            <div class="mb-6 p-6 bg-gray-50 rounded-xl border border-gray-200">
+
+                <h3 class="font-semibold text-gray-900 mb-4">
+                    {{.Question}}
+                </h3>
+
+
+                <div class="space-y-2">
+
+                    <div>A. {{.OptionA}}</div>
+
+                    <div>B. {{.OptionB}}</div>
+
+                    <div>C. {{.OptionC}}</div>
+
+                    <div>D. {{.OptionD}}</div>
+
+                </div>
+
+            </div>
+
+
+            {{else}}
+
+            <p class="text-gray-500">
+                No practice questions available yet.
+            </p>
+
+            {{end}}
+
+        </div>
+
+
+        <!-- Practice Callout Section -->
+
+        <div class="mt-10 p-6 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+
+            <div>
+
+                <h3 class="font-bold text-gray-900 text-base">
+                    Ready to test your knowledge?
+                </h3>
+
+                <p class="text-sm text-gray-600 mt-0.5">
+                    Reinforce what you just learned with interactive practice exercises.
+                </p>
+
+            </div>
+
+
+            <a href="/practice?id={{.Material.ID}}"
+                class="w-full sm:w-auto inline-flex items-center justify-center bg-emerald-600 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:bg-emerald-700 transition shadow-md shadow-emerald-600/20 whitespace-nowrap">
+
+                <i class="fa-solid fa-pen-to-square mr-2"></i>
+
+                Practice Now
+
+            </a>
+
+        </div>
+
+
+        <!-- Bottom Actions -->
+
+        <div class="mt-8 pt-6 border-t border-gray-100 flex items-center justify-between">
+
+            <a href="/learning"
+                class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition">
+
+                <i class="fa-solid fa-arrow-left mr-2"></i>
+
+                Back to Materials
+
+            </a>
+
+        </div>
+
+    </article>
+
+</main>
+
+
+<!-- Footer -->
+
+<footer class="bg-white/80 backdrop-blur-md border-t border-gray-200 py-6 mt-auto">
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+
+        &copy; 2026 AI Learning Companion. All rights reserved.
+
+    </div>
+
+</footer>
+
+</body>
+
+</html>
